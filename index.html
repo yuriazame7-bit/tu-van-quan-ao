@@ -1,0 +1,203 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mess-fb-new",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8f7e3874-5c7d-46c7-8edd-07f54834b205",
+      "name": "Webhook",
+      "webhookId": "5ca9aca9-720a-4a09-a67c-5b7bb6ed6759"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.entry[0].messaging[0].message.text }}",
+        "options": {
+          "systemMessage": "=## Vai trò:\nBạn là \"AI tư vấn\" của Công ty giải pháp AI Automation có thương hiệu Binnova Solutions, bạn có tên Bin 's Assistant.\n\n## Nhiệm vụ:\nBạn có nhiệm vụ tiếp nhận yêu cầu từ khách hàng và đưa ra tư vấn phù hợp.\n\n## Công cụ:\nBạn có thể sử dụng công cụ \"Get Services\" để tìm kiếm thông tin theo yêu cầu của khách theo \"mã dịch vụ\".\n\n###Thông tin dịch vụ:\nĐây là thông tin các loại dịch vụ và \"mã dịch vụ\" tương ứng:\n- Dịch vụ phủ Ceramic - Mã dịch vụ \"DV01\"\n- Dịch vụ đánh bóng xe - Mã dịch vụ \"DV02\"\n- Dịch vụ vệ sinh khoang động cơ - Mã dịch vụ \"DV03\"\n- Dịch vụ rửa xe - Mã dịch vụ \"DV04\"\n\n###Lưu ý: Mã yêu cầu chỉ dùng để tra cứu nội bộ, không phản hồi mã này cho khách.\n\n## Hướng dẫn:\n- Phản hồi đúng thông tin có sẵn, không tự ý tìm kiếm thông tin bên ngoài.\n- Nếu dịch vụ không có trong \"Get Services\" phản hồi chưa có thông tin hoặc không cung cấp dịch vụ.\n\n## Kết quả:\n- Giao tiếp chuyên nghiệp, lịch sự, có lời chào khách lịch sự như: Vâng, Dạ...\n- Phản hồi đúng trọng tâm câu hỏi của khách hàng, không cung cấp thông tin thừa.\n- Khi khách chào hỏi thì luôn xưng tên: \"Binnova Solutions xin chào...\"\"\n- Phản hồi trả về ở dạng text, không định dạng thêm ngoài xuống dòng."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        220,
+        0
+      ],
+      "id": "07f28e40-ece7-43b1-a92a-f26f27d15b27",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        180,
+        220
+      ],
+      "id": "e0fc0b31-9c43-4a07-ae6d-a0cf7c773ce4",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "sD0Duyf03eXCtjgu",
+          "name": "OpenAi account Demo 1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1VapL79FrE6LpGpgtjL-x44VOj61sgz3OJK3xt13gXSE",
+          "mode": "list",
+          "cachedResultName": "Demo Guest",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1VapL79FrE6LpGpgtjL-x44VOj61sgz3OJK3xt13gXSE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2115473323,
+          "mode": "list",
+          "cachedResultName": "Data mẫu",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1VapL79FrE6LpGpgtjL-x44VOj61sgz3OJK3xt13gXSE/edit#gid=2115473323"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Mã",
+              "lookupValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('values0_Value', `Nhập \"mã dịch vụ\" để tim kiếm thông tin dịch vụ tương ứng. VD: DV01`, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        380,
+        220
+      ],
+      "id": "fb0ec163-3f1b-4bd8-b384-6ec65c79feea",
+      "name": "Get Services",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "U5qiaU9T1CQs9SoI",
+          "name": "Google Sheets Bình Tab account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lấy nội dung tin nhắn từ node trước đó\nconst inputText = $input.first().json.output|| \"\";\n\n// Xử lý chuỗi\nconst cleanedMessage = inputText\n  .replace(/\\n{2,}/g, \"\\\\n\")  // Chuyển nhiều \\n liên tiếp thành 1 \\n\n  .replace(/\\n/g, \"\\\\n\")    // Chuyển \\n còn lại thành \\\\n để giữ định dạng JSON\n  .replace(/\\*/g, \"\")\n  .replace(/\\\"/g, \"'\")\n  .trim(); // Xóa khoảng trắng dư thừa ở đầu/cuối\n\n// Trả về dữ liệu đã xử lý\nreturn [\n  {\n    json: {\n      text: cleanedMessage\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        580,
+        0
+      ],
+      "id": "a62f9f04-9655-480b-a5bd-951ee40347a0",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v22.0/me/messages?access_token={api}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"recipient\": {\n    \"id\": \"{{ $('Webhook').item.json.body.entry[0].messaging[0].sender.id }}\"\n  },\n  \"messaging_type\": \"RESPONSE\",\n  \"message\": {\n    \"text\": \"{{ $json.text }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        0
+      ],
+      "id": "df35dbb7-f015-4dfe-88f3-60c9baa51c35",
+      "name": "Send Mess"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Services": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Send Mess",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "83bb458d-bd9d-4da0-a630-eb441e7156bc",
+  "meta": {
+    "instanceId": "cec3888032f701d0d4202794e8554891e2a0bb11993de2455bc6509ac10f8d49"
+  },
+  "id": "fAXp8Zdo2YxZExLx",
+  "tags": []
+}
+
